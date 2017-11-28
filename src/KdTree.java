@@ -23,6 +23,16 @@ public class KdTree {
     public Node(Point2D pt) {
       p = pt;
     }
+    
+    public String toString() {
+      return (new StringBuilder()
+          .append("(")
+          .append(Double.toString(p.x()))
+          .append(", ")
+          .append(Double.toString(p.y()))
+          .append(")"))
+          .toString();
+    }
 
 //    public int size() {
 //      int size = 0;
@@ -190,7 +200,8 @@ public class KdTree {
     return (search(p, root, true).p != null);
   }
 
-  private void draw(Node n, Point2D parent, boolean vertical, double xMin, double yMin, double xMax, double yMax) {
+  private void draw(Node n, Point2D parent, boolean vertical, double xmin, double ymin, double xmax,
+      double ymax) {
     if (n == null) {
       return;
     }
@@ -200,45 +211,30 @@ public class KdTree {
     StdDraw.setPenColor(StdDraw.BLACK);
     n.p.draw();
     StdDraw.text(n.p.x() + 0.01, n.p.y() + 0.01, Integer.toString(++count));
+    StdDraw.show();
     
     // draw the line passing through the point
     if (vertical) {
-      double ymin = yMin;
-      double ymax = yMax;
-      
-      if (parent != null) {
-        if (n.p.y() > parent.y()) {
-          ymin = parent.y();
-        } else {
-          ymax = parent.y();
-        }
-      }
       StdDraw.setPenColor(StdDraw.RED);
       StdDraw.setPenRadius();
       Point2D pt = new Point2D(n.p.x(), ymin);
       pt.drawTo(new Point2D(n.p.x(), ymax));
+      StdDraw.show();
     } else {
-      double xmin = xMin;
-      double xmax = xMax;
-      
-      if (parent != null) {
-        if (n.p.x() > parent.x()) {
-          xmin = parent.x();
-        } else {
-          xmax = parent.x();
-        }
-      }
       StdDraw.setPenColor(StdDraw.BLUE);
       StdDraw.setPenRadius();
       Point2D pt = new Point2D(xmin, n.p.y());
       pt.drawTo(new Point2D(xmax, n.p.y()));
+      StdDraw.show();
     }
     
     // draw its left/bottom node
-    draw(n.lb, n.p, !vertical, xMin, yMin, xMax, yMax);
+    draw(n.lb, n.p, !vertical, xmin, ymin, 
+        (vertical ? n.p.x() : xmax), (vertical ? ymax : n.p.y()));
     
     // draw its right/top node
-    draw(n.rt, n.p, !vertical, xMin, yMin, xMax, yMax);
+    draw(n.rt, n.p, !vertical, (vertical ? n.p.x() : xmin), (vertical ? ymin : n.p.y()),
+        xmax, ymax);
   }
   
   /**
@@ -307,10 +303,10 @@ public class KdTree {
     tree.insert(new Point2D(0.4, 0.15));
     
     System.out.println("Testing if tree contains point p (should contain): "
-        + (tree.contains(new Point2D(0.3, 0.1)) ? "[OK]" : "[FAIL]"));
+        + (tree.contains(new Point2D(0.35, 0.05)) ? "[OK]" : "[FAIL]"));
     System.out.println("Testing if tree contains point p (should NOT contain): "
         + (!tree.contains(new Point2D(0.5, 0.1)) ? "[OK]" : "[FAIL]"));
-    System.out.println("Testing if tree contains point p (should contain): "
+    System.out.println("Testing if tree contains point p (should NOT contain): "
         + (!tree.contains(new Point2D(0.21, 0.1)) ? "[OK]" : "[FAIL]"));
     
     System.out.println("Drawing the points and the lines separating the rectangles");
