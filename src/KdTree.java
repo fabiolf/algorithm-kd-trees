@@ -1,4 +1,7 @@
+import java.util.Scanner;
+
 import edu.princeton.cs.algs4.Point2D;
+import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.RectHV;
 import edu.princeton.cs.algs4.StdDraw;
 
@@ -16,7 +19,7 @@ public class KdTree {
   
   private static class Node {
     private Point2D p; // the point
-    private RectHV rect; // the axis-aligned rectangle corresponding to this node
+    // private RectHV rect; // the axis-aligned rectangle corresponding to this node
     private Node lb; // the left/bottom subtree
     private Node rt; // the right/top subtree
     
@@ -34,19 +37,19 @@ public class KdTree {
           .toString();
     }
 
-//    public int size() {
-//      int size = 0;
-//      if (p != null) {
-//        if (lb != null) {
-//          size += lb.size();
-//        }
-//        if (rt != null) {
-//          size += rt.size();
-//        }
-//        size++;
-//      }
-//      return size;
-//    }
+    //    public int size() {
+    //      int size = 0;
+    //      if (p != null) {
+    //        if (lb != null) {
+    //          size += lb.size();
+    //        }
+    //        if (rt != null) {
+    //          size += rt.size();
+    //        }
+    //        size++;
+    //      }
+    //      return size;
+    //    }
   }
 
   /**
@@ -200,7 +203,7 @@ public class KdTree {
     return (search(p, root, true).p != null);
   }
 
-  private void draw(Node n, Point2D parent, boolean vertical, double xmin, double ymin, double xmax,
+  private void draw(Node n, boolean vertical, double xmin, double ymin, double xmax,
       double ymax) {
     if (n == null) {
       return;
@@ -229,11 +232,11 @@ public class KdTree {
     }
     
     // draw its left/bottom node
-    draw(n.lb, n.p, !vertical, xmin, ymin, 
+    draw(n.lb, !vertical, xmin, ymin, 
         (vertical ? n.p.x() : xmax), (vertical ? ymax : n.p.y()));
     
     // draw its right/top node
-    draw(n.rt, n.p, !vertical, (vertical ? n.p.x() : xmin), (vertical ? ymin : n.p.y()),
+    draw(n.rt, !vertical, (vertical ? n.p.x() : xmin), (vertical ? ymin : n.p.y()),
         xmax, ymax);
   }
   
@@ -251,7 +254,7 @@ public class KdTree {
       return;
     }
     count = 0;
-    draw(root, null, true, XMIN, YMIN, XMAX, YMAX);
+    draw(root, true, XMIN, YMIN, XMAX, YMAX);
   }
 
   /**
@@ -264,7 +267,61 @@ public class KdTree {
     if (rect == null) {
       throw new java.lang.IllegalArgumentException("null argument received");
     }
-    return null;
+    
+    // create a rectangle for the part of the canvas that we are investigating
+    // check if there is an intersection with the rect argument
+    // search the tree first going to left/bottom and then going to right/top
+    // every point of each node of the tree that intersects the rectangle, we add to a queue
+    
+    Queue<Point2D> points = new Queue<Point2D>();
+    
+    range(rect, points, root, true, XMIN, YMIN, XMAX, YMAX);
+    
+    return points;
+  }
+
+  private void range(RectHV rect, Queue<Point2D> points, Node n, boolean vertical, double xmin,
+      double ymin, double xmax, double ymax) {
+    if (n == null) {
+      return;
+    }
+    if (n.p == null) {
+      return;
+    }
+    
+    boolean added = false;
+    // investigate the point, first left/bottom
+    RectHV lbRect = new RectHV(xmin, ymin,
+        (vertical ? n.p.x() : xmax), (vertical ? ymax : n.p.y()));
+    
+    if (rect.intersects(lbRect)) {
+      // ok, we know there is a part of the rect that intersects the left/bottom plane
+      // let's check if rect contains n.p
+      if (rect.contains(n.p)) {
+        // if it contains enqueue that point
+        points.enqueue(n.p);
+        added = true;
+      }
+      // investigate left/bottom subtree
+      range(rect, points, n.lb, !vertical, xmin, ymin,
+          (vertical ? n.p.x() : xmax), (vertical ? ymax : n.p.y()));
+    }
+
+    // now investigate 
+    RectHV rtRect = new RectHV((vertical ? n.p.x() : xmin), (vertical ? ymin : n.p.y()),
+        xmax, ymax);
+    
+    if (rect.intersects(rtRect)) {
+      // ok, we know there is a part of the rect that intersects the right/top plane
+      // let's check if rect contains n.p (and if it was not added previously)
+      if (!added && rect.contains(n.p)) {
+        // if it contains enqueue that point
+        points.enqueue(n.p);
+      }
+      // investigate right/top subtree
+      range(rect, points, n.rt, !vertical, (vertical ? n.p.x() : xmin), (vertical ? ymin : n.p.y()),
+          xmax, ymax);
+    }
   }
 
   /**
@@ -277,7 +334,54 @@ public class KdTree {
     if (p == null) {
       throw new java.lang.IllegalArgumentException("null argument received");
     }
-    return null;
+    
+    if (root.p == null) {
+      return null;
+    }
+    
+    return nearest(root, p, true);
+  }
+
+  private Point2D nearest(Node n, Point2D p, boolean vertical) {
+    Point2D pt = n.p;
+    // verify if we start to the left/bottom or to the right/top
+    if ((vertical ? n.p.x() >= p.x() : n.p.y() >= p.y())) {
+      if (n.lb != null) {
+        pt = nearest(n.lb, p, !vertical);
+      }
+      if ((Math.abs((vertical ? p.x() : p.y()) - (vertical ? n.p.x() : n.p.y()))
+          < pt.distanceTo(p)) && n.rt != null) {
+        // that means we can have a point at the other half of the plane that
+        // can be nearer than the nearest point at this side of the plane
+        Point2D rtPt = nearest(n.rt, p, !vertical);
+        if (!rtPt.equals(n.p)) {
+          if (rtPt.distanceSquaredTo(p) < pt.distanceSquaredTo(p)) {
+            pt = rtPt;
+          }
+        }
+      }
+    } else {
+      if (n.rt != null) {
+        pt = nearest(n.rt, p, !vertical);
+      }
+      if ((Math.abs((vertical ? p.x() : p.y()) - (vertical ? n.p.x() : n.p.y())) 
+          < pt.distanceTo(p)) && n.lb != null) {
+        // that means we can have a point at the other half of the plane that
+        // can be nearer than the nearest point at this side of the plane
+        Point2D lbPt = nearest(n.lb, p, !vertical);
+        if (!lbPt.equals(n.p)) {
+          if (lbPt.distanceSquaredTo(p) < pt.distanceSquaredTo(p)) {
+            pt = lbPt;
+          }
+        }
+      }
+    }
+    if (!pt.equals(n.p)) {
+      if (pt.distanceSquaredTo(p) > n.p.distanceSquaredTo(p)) {
+        pt = n.p;
+      }
+    }
+    return pt;
   }
 
   /**
@@ -317,6 +421,42 @@ public class KdTree {
     tree.draw();
     
     StdDraw.show();
+    
+    System.out.println("testing range method");
+    System.out.println("Press \"ENTER\" to continue...");
+    Scanner scanner = new Scanner(System.in);
+    scanner.nextLine();
+
+    RectHV selection = new RectHV(0.1, 0.1, 0.3, 0.3);
+    
+    StdDraw.setPenColor(StdDraw.GREEN);
+    StdDraw.setPenRadius();
+    selection.draw();
+    StdDraw.show();
+    Queue<Point2D> result = (Queue<Point2D>) tree.range(selection);
+    for (Point2D presult : result) {
+      System.out.println(presult.toString());
+    }
+
+    Point2D nearestTest = new Point2D(0.2, 0.17);
+    StdDraw.setPenColor(StdDraw.MAGENTA);
+    StdDraw.setPenRadius(0.01);
+    nearestTest.draw();
+    StdDraw.show();
+    
+    System.out.println("testing nearest method");
+    System.out.println("Press \"ENTER\" to continue...");
+    scanner.nextLine();
+    scanner.close();
+
+    Point2D nearest = tree.nearest(nearestTest);
+    System.out.println("nearest point" + nearest.toString());
+    StdDraw.setPenColor(StdDraw.BLACK);
+    StdDraw.setPenRadius();
+    nearest.drawTo(nearestTest);
+    StdDraw.show();
+
+    System.out.println("Finished tests!");
   }
 
 }
