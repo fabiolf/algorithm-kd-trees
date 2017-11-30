@@ -7,19 +7,17 @@ import edu.princeton.cs.algs4.StdDraw;
 
 public class KdTree {
 
-  Node root;
-  int size;
-  int count;
-  
   private static final double XMIN = 0;
   private static final double XMAX = 1;
   private static final double YMIN = 0;
   private static final double YMAX = 1;
-  
+
+  private final Node root;
+  private int size;
+  private int count;
   
   private static class Node {
     private Point2D p; // the point
-    // private RectHV rect; // the axis-aligned rectangle corresponding to this node
     private Node lb; // the left/bottom subtree
     private Node rt; // the right/top subtree
     
@@ -36,20 +34,6 @@ public class KdTree {
           .append(")"))
           .toString();
     }
-
-    //    public int size() {
-    //      int size = 0;
-    //      if (p != null) {
-    //        if (lb != null) {
-    //          size += lb.size();
-    //        }
-    //        if (rt != null) {
-    //          size += rt.size();
-    //        }
-    //        size++;
-    //      }
-    //      return size;
-    //    }
   }
 
   /**
@@ -112,40 +96,6 @@ public class KdTree {
       }
     }
   }
-  
-  /**
-   * Recursive method to insert into the tree.
-   * @param p the point to be inserted.
-   * @param n the node to be searched or inserted
-   * @param left if we consider the x coordinate (true) or y coordinate (false) to decide
-   *        what subtree to insert the point
-   */
-  //  private Node insert(Point2D p, Node n, boolean x) {
-  //    if (n == null) {
-  //      // we found the position to insert the point p
-  //      size++;
-  //      return new Node(p);
-  //    }
-  //    if (n.p.equals(p)) {
-  //      // we found the same point, so we do not insert anything
-  //      // we return the same node, so the link will not be changed
-  //      return n;
-  //    }
-  //    if (x) {
-  //      if (p.x() < n.p.x()) {
-  //        n.lb = insert(p, n.lb, !x);
-  //      } else {
-  //        n.rt = insert(p, n.rt, !x);
-  //      }
-  //    } else {
-  //      if (p.y() < n.p.y()) {
-  //        n.lb = insert(p, n.lb, !x);
-  //      } else {
-  //        n.rt = insert(p, n.rt, !x);
-  //      }
-  //    }
-  //    return null;
-  //  }
   
   /**
    * Recursive method to insert a new point into the KdTree. First it performs a search
@@ -303,8 +253,10 @@ public class KdTree {
         added = true;
       }
       // investigate left/bottom subtree
-      range(rect, points, n.lb, !vertical, xmin, ymin,
-          (vertical ? n.p.x() : xmax), (vertical ? ymax : n.p.y()));
+      if (n.lb != null) {
+        range(rect, points, n.lb, !vertical, xmin, ymin,
+            (vertical ? n.p.x() : xmax), (vertical ? ymax : n.p.y()));
+      }
     }
 
     // now investigate 
@@ -319,8 +271,10 @@ public class KdTree {
         points.enqueue(n.p);
       }
       // investigate right/top subtree
-      range(rect, points, n.rt, !vertical, (vertical ? n.p.x() : xmin), (vertical ? ymin : n.p.y()),
-          xmax, ymax);
+      if (n.rt != null) {
+        range(rect, points, n.rt, !vertical, (vertical ? n.p.x() : xmin),
+            (vertical ? ymin : n.p.y()), xmax, ymax);
+      }
     }
   }
 
@@ -349,8 +303,8 @@ public class KdTree {
       if (n.lb != null) {
         pt = nearest(n.lb, p, !vertical);
       }
-      if ((Math.abs((vertical ? p.x() : p.y()) - (vertical ? n.p.x() : n.p.y()))
-          < pt.distanceTo(p)) && n.rt != null) {
+      if ((Math.pow((vertical ? p.x() : p.y()) - (vertical ? n.p.x() : n.p.y()), 2)
+          < pt.distanceSquaredTo(p)) && n.rt != null) {
         // that means we can have a point at the other half of the plane that
         // can be nearer than the nearest point at this side of the plane
         Point2D rtPt = nearest(n.rt, p, !vertical);
@@ -364,8 +318,8 @@ public class KdTree {
       if (n.rt != null) {
         pt = nearest(n.rt, p, !vertical);
       }
-      if ((Math.abs((vertical ? p.x() : p.y()) - (vertical ? n.p.x() : n.p.y())) 
-          < pt.distanceTo(p)) && n.lb != null) {
+      if ((Math.pow((vertical ? p.x() : p.y()) - (vertical ? n.p.x() : n.p.y()), 2) 
+          < pt.distanceSquaredTo(p)) && n.lb != null) {
         // that means we can have a point at the other half of the plane that
         // can be nearer than the nearest point at this side of the plane
         Point2D lbPt = nearest(n.lb, p, !vertical);
@@ -389,22 +343,23 @@ public class KdTree {
    * @param args command-line parameter
    */
   public static void main(String[] args) {
+    
     System.out.println("\"Unit\" tests for kdTree");
     
     KdTree tree = new KdTree();
-    Point2D p = new Point2D(0.1, 0.1);
+    Point2D p = new Point2D(0.7, 0.2);
     System.out.println("Testing if tree contains point p (should NOT contain): "
         + (!tree.contains(p) ? "[OK]" : "[FAIL]"));
     tree.insert(p);
     System.out.println("Testing if tree contains point p (should contain): "
         + (tree.contains(p) ? "[OK]" : "[FAIL]"));
     
-    tree.insert(new Point2D(0.3, 0.2));
-    tree.insert(new Point2D(0.25, 0.3));
-    tree.insert(new Point2D(0.35, 0.05));
-    tree.insert(new Point2D(0.2, 0.35));
-    tree.insert(new Point2D(0.15, 0.25));
-    tree.insert(new Point2D(0.4, 0.15));
+//    tree.insert(new Point2D(0.7, 0.2));
+    tree.insert(new Point2D(0.5, 0.4));
+    tree.insert(new Point2D(0.2, 0.3));
+    tree.insert(new Point2D(0.4, 0.7));
+    tree.insert(new Point2D(0.9, 0.6));
+//    tree.insert(new Point2D(0.4, 0.15));
     
     System.out.println("Testing if tree contains point p (should contain): "
         + (tree.contains(new Point2D(0.35, 0.05)) ? "[OK]" : "[FAIL]"));
@@ -427,7 +382,7 @@ public class KdTree {
     Scanner scanner = new Scanner(System.in);
     scanner.nextLine();
 
-    RectHV selection = new RectHV(0.1, 0.1, 0.3, 0.3);
+    RectHV selection = new RectHV(0.28, 0.78, 0.72, 0.9);
     
     StdDraw.setPenColor(StdDraw.GREEN);
     StdDraw.setPenRadius();
@@ -457,6 +412,7 @@ public class KdTree {
     StdDraw.show();
 
     System.out.println("Finished tests!");
+    
   }
 
 }

@@ -1,15 +1,11 @@
-import java.util.ArrayList;
-import java.util.Scanner;
-
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.RectHV;
 import edu.princeton.cs.algs4.SET;
-import edu.princeton.cs.algs4.StdDraw;
 
 public class PointSET {
   
-  SET<Point2D> mSet;
+  private final SET<Point2D> mSet;
   
   public PointSET() {
     // construct an empty set of points
@@ -26,6 +22,10 @@ public class PointSET {
     return mSet.size();
   }
 
+  /**
+   * Insert a new point into the PointSET.
+   * @param p the point to be inserted
+   */
   public void insert(Point2D p) {
     // add the point to the set (if it is not already in the set)
     if (p == null) {
@@ -34,6 +34,11 @@ public class PointSET {
     mSet.add(p);
   }
 
+  /**
+   * Verify if the PointSET contains a point.
+   * @param p the point to be verified
+   * @return true if found, false otherwise
+   */
   public boolean contains(Point2D p) {
     // does the set contain point p?
     if (p == null) {
@@ -88,7 +93,7 @@ public class PointSET {
       if (nearest == null) {
         nearest = pt;
       } else {
-        if (nearest.distanceTo(p) > pt.distanceTo(p)) {
+        if (nearest.distanceSquaredTo(p) > pt.distanceSquaredTo(p)) {
           nearest = pt;
         }
       }
@@ -101,6 +106,7 @@ public class PointSET {
    * @param args command-line parameter
    */
   public static void main(String[] args) {
+    /*
     // unit testing of the methods (optional)
     // testing range
     System.out.println("Testing Range method. Look at the StdDraw canvas and verify...");
@@ -176,5 +182,6 @@ public class PointSET {
     } else {
       System.out.println("Testing nearest to an empty set: [FAIL]");
     }
+    */
   }
 }
